@@ -1,32 +1,76 @@
-name: Deploy django app to server
+#name: Deploy django app to server
+#
+#on:
+#    push:
+#      branches:
+#        - main
+#      paths:
+#        - '.github/workflows/deploy-django.yml'
+#        - 'mydjangoapp/**'
+#    workflow_dispatch:
+#
+#jobs:
+#  deploy:
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - uses: actions/checkout@v4
+##      - uses: actions/setup-python@v5
+##        with:
+##          python-version: '3.12.7'
+##
+##      - name: pip install packages
+##        working-directory: ./mydjangoapp
+##        run: |
+##          python3 -m venv env
+##          source env/bin/activate
+##          pip3 install -r requirements.txt
+#
+#      - name: Copy files via SSH
+#        uses: appleboy/scp-action@v1
+#        with:
+#          host: ${{ secrets.DJANGO_SSH_HOST }}
+#          username: ${{ secrets.DJANGO_SSH_USERNAME }}
+#          key: ${{ secrets.DJANGO_SSH_KEY }}
+#          port: ${{ secrets.DJANGO_SSH_PORT }}
+#          source: "./mydjangoapp"
+#          target: "/opt/"
+#
+#      - name: Execute remote SSH commands using password
+#        uses: appleboy/ssh-action@v1
+#        with:
+#          host: ${{ secrets.DJANGO_SSH_HOST }}
+#          username: ${{ secrets.DJANGO_SSH_USERNAME }}
+#          key: ${{ secrets.DJANGO_SSH_KEY }}
+#          port: ${{ secrets.DJANGO_SSH_PORT }}
+#          script: |
+#            cd /opt/mydjangoapp
+#            python3 -m venv env
+#            source env/bin/activate
+#            pip3 install -r requirements.txt
+#            python3 manage.py migrate
+#            systemctl restart mydjangoapp-gunicorn
+
+name: Deploy Django App to Server
 
 on:
-    push:
-      branches:
-        - main
-      paths:
-        - '.github/workflows/deploy-django.yml'
-        - 'mydjangoapp/**'
-    workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/deploy-django.yml'
+      - 'mydjangoapp/**'
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-#      - uses: actions/setup-python@v5
-#        with:
-#          python-version: '3.12.7'
-#
-#      - name: pip install packages
-#        working-directory: ./mydjangoapp
-#        run: |
-#          python3 -m venv env
-#          source env/bin/activate
-#          pip3 install -r requirements.txt
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Copy files via SSH
+      - name: Copy Django app to server
         uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.DJANGO_SSH_HOST }}
@@ -36,7 +80,7 @@ jobs:
           source: "./mydjangoapp"
           target: "/opt/"
 
-      - name: Execute remote SSH commands using password
+      - name: Run remote deployment steps
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.DJANGO_SSH_HOST }}
@@ -45,8 +89,23 @@ jobs:
           port: ${{ secrets.DJANGO_SSH_PORT }}
           script: |
             cd /opt/mydjangoapp
+
+            # Virtual environment yaratish
             python3 -m venv env
+
+            # Aktivatsiya va kutubxonalarni o'rnatish
             source env/bin/activate
-            pip3 install -r requirements.txt
-            python3 manage.py migrate
-            systemctl restart mydjangoapp-gunicorn
+            pip install --upgrade pip
+            pip install -r requirements.txt
+
+            # Django komandalar
+            python manage.py migrate
+            python manage.py collectstatic --noinput
+
+            # Gunicorn service'ni qayta ishga tushurish
+            sudo systemctl daemon-reexec
+            sudo systemctl daemon-reload
+            sudo systemctl restart mydjangoapp-gunicorn
+
+            # Gunicorn statusni ko‘rish (debug uchun)
+            sudo systemctl status mydjangoapp-gunicorn || true
