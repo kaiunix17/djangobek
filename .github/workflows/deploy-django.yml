@@ -34,6 +34,8 @@ jobs:
           key: ${{ secrets.DJANGO_SSH_KEY }}
           port: ${{ secrets.DJANGO_SSH_PORT }}
           script: |
+            sudo apt update
+            sudo apt install -y python3 python3-pip python3-venv
             cd /opt/mydjangoapp
             python3 -m venv env
             source env/bin/activate
