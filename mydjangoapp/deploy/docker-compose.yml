@@ -8,7 +8,7 @@ services:
       - web
 
   web:
-    image: registry.digitalocean.com/djangoapp-registry/mydjangoapp:${IMAGE_TAG}
+    image: registry.digitalocean.com/djangoapp-registry/mydjangoapp:9330c09dac17cf380fb2315a47c5663d
     restart: unless-stopped
     command: gunicorn mydjangoapp.wsgi:application --bind 0.0.0.0:8000
     env_file:
